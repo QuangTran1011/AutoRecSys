@@ -1,0 +1,13 @@
+project: kltn
+provider: local
+registry:
+    type: file
+    path: "${REGISTRY_PATH}"
+online_store:
+    type: redis
+    connection_string: "${REDIS_HOST}:${REDIS_PORT}"
+offline_store:
+  type: bigquery
+  project_id: "${PROJECT_ID}"
+  dataset: kltn
+entity_key_serialization_version: 2
