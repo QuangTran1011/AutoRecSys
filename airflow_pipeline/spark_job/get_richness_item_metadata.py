@@ -31,16 +31,3 @@ sampled_metadata_df = metadata_raw_df.join(
 )
 
 sampled_metadata_df.write.mode("overwrite").parquet("gs://kltn--data/sampled_metadata/")
-
-from google.cloud import storage
-from datetime import datetime
-
-def upload_flag(bucket_name: str):
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-
-    today = datetime.utcnow().strftime("%Y_%m_%d")
-    blob = bucket.blob(f"_flags/training_ready_{today}.txt")
-    blob.upload_from_string("done")
-
-upload_flag(args.bucket)

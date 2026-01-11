@@ -152,7 +152,7 @@ Finally, re-run the Airflow pipeline.
 #### Prepare 
 Install Kubeflow:
 ```bash
-cd ROOT_PATH/helm_charts_and_material/kubeflow-pipelines
+cd ROOT_PATH/manifests/kubeflow-pipelines
 
 kubectl apply -k manifests/kustomize/cluster-scoped-resources
 kubectl apply -k manifests/kustomize/env/platform-agnostic
@@ -263,7 +263,7 @@ kubectl apply -f feature_online_server.yaml
 
 cd ROOT_PATH/model_server
 Build image from docker file and upload to DockerHub
-cd ROOT_PATH/helm_charts_and_material/istio-*
+cd ROOT_PATH/manifests/istio-*
 export PATH=$PWD/bin:$PATH
 istioctl install --set profile=default -y
 kubectl label namespace serving istio-injection=enabled

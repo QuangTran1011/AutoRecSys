@@ -112,7 +112,7 @@ with DAG(
             "--conf", "spark.executor.cores=2",
             "--conf", "spark.driver.memory=1g",
             "--conf", "spark.executor.memory=14g",
-            "local:///app/spark_job/sampling.py",
+            "local:///app/spark_job/sampling_rich_item.py",
         ],
         get_logs=True,
         is_delete_operator_pod=True,
@@ -151,7 +151,7 @@ with DAG(
             "--conf", "spark.driver.memory=1g",
             "--conf", "spark.executor.memory=14g",
 
-            "local:///app/spark_job/sampling_item.py",
+            "local:///app/spark_job/get_richness_item_metadata.py",
         ],
         get_logs=True,
         is_delete_operator_pod=True,

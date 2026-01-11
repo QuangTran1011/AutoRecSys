@@ -2,14 +2,14 @@
 version: 2
 
 models:
-  - name: user_rating_stats
+  - name: user_rating_stats_test
     description: "Statistics of user-asin rating"
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - user_id
             - timestamp
-  - name: parent_asin_rating_stats
+  - name: parent_asin_rating_stats_test
     description: "Statistics of asin rating"
     data_tests:
       - dbt_utils.unique_combination_of_columns:
