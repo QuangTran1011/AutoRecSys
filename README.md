@@ -113,6 +113,13 @@ Install Airflow:
 - `kubectl apply -f createpod_role.yaml`
 - `kubectl apply -f addrole_svacc.yaml`
 
+Set variables:
+```bash
+airflow variables set training_bucket kltn--data
+airflow variables set training_yaml_path config/training_pipeline.yaml
+airflow variables set kfp_host http://ml-pipeline.kubeflow.svc.cluster.local:8080
+```
+
 Dags:
 - Update the `project_id` value in the dbt profiles.
 - Update the `project_id` and `connection_string` (Redis IP) in `feature_store.yaml`.

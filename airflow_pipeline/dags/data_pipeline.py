@@ -6,6 +6,7 @@ from airflow.providers.google.cloud.operators.gcs import GCSListObjectsOperator
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.kubernetes.secret import Secret
+from airflow.models import Variable
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from kfp import Client
 
@@ -90,7 +91,7 @@ with DAG(
         image=IMAGE,
         cmds=["/opt/spark/bin/spark-submit"],
         arguments=[
-            "--master", "k8s://https://136.115.43.206:443",
+            "--master", "k8s://https://136.115.43.206:443",   # get by kubectl cluster-info
             "--deploy-mode", "cluster",
         
             "--conf", "spark.hadoop.fs.gs.impl=com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem",
@@ -117,6 +118,7 @@ with DAG(
         is_delete_operator_pod=True,
         secrets=[gcp_sa_secret],
         env_vars=env_sa,
+        env_from=[{"configMapRef": {"name": "airflow-config"}}],
     )
 
     # Spark job 2
@@ -127,7 +129,7 @@ with DAG(
         image=IMAGE,
         cmds=["/opt/spark/bin/spark-submit"],
         arguments=[
-            "--master", "k8s://https://136.115.43.206:443",
+            "--master", "k8s://https://136.115.43.206:443",       # get by kubectl cluster-info
             "--deploy-mode", "cluster",
         
             "--conf", "spark.hadoop.fs.gs.impl=com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem",
@@ -155,6 +157,7 @@ with DAG(
         is_delete_operator_pod=True,
         secrets=[gcp_sa_secret],
         env_vars=env_sa,
+        env_from=[{"configMapRef": {"name": "airflow-config"}}],
     )
 
 
@@ -169,6 +172,7 @@ with DAG(
         is_delete_operator_pod=True,
         secrets=[gcp_sa_secret],
         env_vars=env_sa,
+        env_from=[{"configMapRef": {"name": "airflow-config"}}],
         service_account_name="default",
     )
 
@@ -190,6 +194,7 @@ with DAG(
         is_delete_operator_pod=True,
         secrets=[gcp_sa_secret],
         env_vars=env_sa,
+        env_from=[{"configMapRef": {"name": "airflow-config"}}],
         service_account_name="default",
     )
 
@@ -213,32 +218,34 @@ with DAG(
         is_delete_operator_pod=True,
         secrets=[gcp_sa_secret],
         env_vars=env_sa,
+        env_from=[{"configMapRef": {"name": "airflow-config"}}],
         service_account_name="default",
     )
 
     def trigger_kfp_training(**context):
-        # 1. Download pipeline yaml từ GCS
+        bucket_name = Variable.get("training_bucket")  # đọc giá trị
+        pipeline_yaml = Variable.get("training_yaml_path")
+        kfp_host = Variable.get("kfp_host")
+
+        # Download pipeline YAML từ GCS
         hook = GCSHook(gcp_conn_id="google_cloud_default")
         local_pipeline = "/tmp/training.yaml"
-
         hook.download(
-            bucket_name="kltn--data",
-            object_name="config/training_pipeline.yaml",
+            bucket_name=bucket_name,
+            object_name=pipeline_yaml,
             filename=local_pipeline,
         )
 
-        # 2. Trigger Kubeflow Pipeline
-        client = Client(
-            host="http://ml-pipeline.kubeflow.svc.cluster.local:8080"
-        )
-
+        # Trigger Kubeflow Pipeline
+        from kfp import Client
+        client = Client(host=kfp_host)
         today = datetime.utcnow().strftime("%Y-%m-%d")
 
         client.create_run_from_pipeline_package(
             pipeline_file=local_pipeline,
             run_name=f"recsys-train-{today}",
             arguments={
-                "bucket_name": "kltn--data",
+                "bucket_name": bucket_name,
                 "yaml_skipgram_gcs_path": "config/skipgramptjob.yaml",
                 "yaml_ranker_gcs_path": "config/rankingptjob.yaml",
             },
