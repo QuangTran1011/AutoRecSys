@@ -8,7 +8,7 @@ spec:
   serviceAccountName: jenkins-deployer
   restartPolicy: Never
   containers:
-  - name: ci
+  - name: cicd
     image: quangtran1011/jenkins-agent:latest
     command: ['cat']
     tty: true
@@ -40,6 +40,7 @@ spec:
     GCS_BUCKET = "gs://kltn--data/config"
     MLFLOW_TRACKING_URI = "http://34.69.242.168:8080"
     INFER_SERVICE_YAML = "deployment/k8s/model_server/ranker-inferenceservice.yaml"
+    REBUILD_IMAGE = "false"
   }
 
   stages {
@@ -48,21 +49,16 @@ spec:
        1. Detect changes
        ========================= */
     stage('Detect changes') {
-      when { expression { !params.RUN_DEPLOY } }
+      when {
+        allOf {
+          expression { !params.RUN_DEPLOY }
+          changeset "training_pipeline/src/**"
+        }
+      }
       steps {
-        container('ci') {
-          script {
-            def srcChanged = sh(
-              script: """
-                git fetch --unshallow || true
-                git diff --name-only origin/main...HEAD | grep '^training_pipeline/src/' || true
-              """,
-              returnStdout: true
-            ).trim()
-
-            env.REBUILD_IMAGE = srcChanged ? "true" : "false"
-            echo "REBUILD_IMAGE = ${env.REBUILD_IMAGE}"
-          }
+        script {
+          env.REBUILD_IMAGE = "true"
+          echo "REBUILD_IMAGE = true"
         }
       }
     }
@@ -80,6 +76,7 @@ spec:
       agent any
       steps {
         script {
+          checkout scm
           echo "Building Docker image..."
           def versionTag = "${BUILD_NUMBER}"
           def img = docker.build("${IMAGE_NAME}:${versionTag}", "training_pipeline")
@@ -95,46 +92,24 @@ spec:
     /* =========================
        3. Generate Kubeflow pipeline YAML
        ========================= */
-    stage('Generate training pipeline yaml') {
+    stage('Deploy pipeline') {
       when { expression { !params.RUN_DEPLOY } }
       steps {
-        container('ci') {
+        container('cicd') {
           sh 'python3 training_pipeline/training_pipeline.py'
-        }
-      }
-    }
-
-    /* =========================
-       4. Upload pipeline specs to GCS
-       ========================= */
-    stage('Upload pipeline specs') {
-      when { expression { !params.RUN_DEPLOY } }
-      steps {
-        container('ci') {
           sh 'gsutil cp training_pipeline/pipeline/*.yaml ${GCS_BUCKET}/'
-        }
-      }
-    }
-
-    /* =========================
-       5. Trigger Kubeflow Pipeline
-       ========================= */
-    stage('Run Kubeflow pipeline') {
-      when { expression { !params.RUN_DEPLOY } }
-      steps {
-        container('ci') {
           sh 'python3 training_pipeline/pipeline/run_pipeline.py'
         }
       }
     }
 
     /* =========================
-       6. Deploy model (MLflow gated)
+       4. Deploy model (MLflow gated)
        ========================= */
-    stage('Deploy model (MLflow gated)') {
+    stage('Deploy model') {
       when { expression { params.RUN_DEPLOY } }
       steps {
-        container('ci') {
+        container('cicd') {
           sh 'python3 training_pipeline/check_deploy_new_model.py'
         }
       }

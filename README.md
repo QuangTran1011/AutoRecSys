@@ -37,9 +37,8 @@ The system consists of three main workflows: the data pipeline, the training pip
 ├── api                                           // fast api 
 ├── deployment                                    // deploy
 │   ├── k8s                                       // deploy in k8s
-│   │   ├── addons                                // rbac, biding, pvc,... for k8s
+│   │   ├── addons                                // rbac, binding, pvc,... for k8s
 │   │   ├── api   
-│   │   ├── config-map.yaml                       // config-map of cluster
 │   │   ├── feast_online_server
 │   │   ├── model_server
 │   │   └── session_events_capture
@@ -76,6 +75,7 @@ The system consists of three main workflows: the data pipeline, the training pip
 Clone this repository
 Set up Python Environment:
 ```bash
+python 3.12
 pip install uv==0.8.13
 uv sync --all-groups
 ```
@@ -109,7 +109,7 @@ Install Airflow:
 - `cd ROOT_PATH/helm_charts_and_material` 
 - Update the repo value in dags.gitSync to point to your repository in the Airflow values file.
 - `helm install airlow ./airflow`
-- `cd ROOT_PATH/deployment/k8s/addons` 
+- `cd ROOT_PATH/deployment/k8s/addons/role_bindings` 
 - `kubectl apply -f createpod_role.yaml`
 - `kubectl apply -f addrole_svacc.yaml`
 
@@ -127,7 +127,7 @@ Access Airflow:
 You can now run the data pipeline by triggering the DAGs.  
 However, during the first run, the pipeline is expected to fail at the Feature Store step because it has not been initialized yet.
 
-Apply feast:
+Apply Feast:
 - GCP Memorystore (Redis) is only accessible within the internal VPC, so an SSH tunnel is used for access.  
 - SSH into the VM created above using an SSH key.  
 - ssh into redis: `gcloud compute ssh vm-name -- -L 6379:<PRIVATE_IP_OF_REDIS>:6379`.  
@@ -169,7 +169,7 @@ kubectl rollout status deployment/seaweedfs -n kubeflow
 
 Create a GCP Filestore instance for distributed training, providing a shared filesystem that can be accessed concurrently by multiple pods.  
 - Go to Filestore GCP and create `BASIC_HDD 1TB`.
-- Update nfs path to the Filestore Address and ``cd ROOT_PATH/deployment/k8s/addons`, kubectl apply -f training_pvc.yaml`
+- Update nfs path to the Filestore Address and ``cd ROOT_PATH/deployment/k8s/addons/storage`, kubectl apply -f training_pvc.yaml`
 
 #### Workload Identity
 ```bash
@@ -213,18 +213,24 @@ pipeline-runner is the service account used to run component in pipeline.
 - Open firewall to access
 
 #### Training Pipeline
-
+Finetune(optional):
 - Fine-tune `Qwen3-0.6B` for item tagging using the `finetuning.ipynb` notebook (executed on Kaggle), then compute tag embeddings for use in model training.
+![mô tả ảnh](images/prompt.png)  
+![mô tả ảnh](images/loss1.png)  
+![mô tả ảnh](images/loss2.png)  
+
+
+Config:
 - Update the configuration values in `src/feature_repo` to match your project setup.
 - Build the training Docker image from the provided Dockerfile and push it to Docker Hub.
 - Navigate to the pipeline directory:
   `cd ROOT_PATH/training_pipeline/pipeline`
 
-- Update the following fields in `_ptjob.yaml`:
+- Update the following fields in `skipgramptjob.yaml` and `rankingptjob.yaml`:
   - serviceAccount
   - image
   - mlflow_uri
-  Upload the updated `_ptjob.yaml` file to GCS.
+  Upload the updated 2 file `_ptjob.yaml` file to GCS.
 
 - Generate the Kubeflow pipeline definition:
   `python training_pipeline.py`
@@ -246,7 +252,7 @@ helm install qdrant ./qdrant
 cd ROOT_PATH/feature_pipeline/feature_store
 Build image from docker file and upload to DockerHub
 cd ROOT_PATH/deployment/k8s/feast_online_server
-kubectl apply -f feature-online-server.yaml
+kubectl apply -f feature_online_server.yaml
 
 cd ROOT_PATH/model_server
 Build image from docker file and upload to DockerHub
@@ -255,7 +261,7 @@ export PATH=$PWD/bin:$PATH
 istioctl install --set profile=default -y
 kubectl label namespace serving istio-injection=enabled
 cd ROOT_PATH/deployment/k8s/model_server
-kubectl apply -f ranker-inferenceservice.yaml
+kubectl apply -f ranker_inferenceservice.yaml
 
 cd ROOT_PATH/api
 Build image from docker file and upload to DockerHub
@@ -265,8 +271,8 @@ helm install nginx-ingress ./ingress-nginx \
   --namespace ingress-nginx \
   --set controller.publishService.enabled=true
 cd ROOT_PATH/deployment/k8s/api
-kubectl apply -f api-deployment.yaml
-kubectl apply -f api-ingress.yaml
+kubectl apply -f api_deployment.yaml
+kubectl apply -f api_ingress.yaml
 
 cd ROOT_PATH/deployment/k8s/feast_online_server
 kubectl apply -f feast_ingress.yaml
@@ -291,8 +297,8 @@ kubectl apply -n kafka -f https://strimzi.io/install/latest?namespace=kafka
 cd ROOT_PATH/process_interaction_events
 build and push docker image
 cd ROOT_PATH/deployment/k8s/session_events_capture
-kubectl apply -f kafka-cluster.yaml
-kubectl apply -f topic-user-interactions.yaml
+kubectl apply -f kafka_cluster.yaml
+kubectl apply -f topic_user_interactions.yaml
 kubectl apply -f batch_consumer_cronjob.yaml
 ```
 
