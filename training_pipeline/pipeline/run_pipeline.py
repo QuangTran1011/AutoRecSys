@@ -36,7 +36,7 @@ def download_from_gcs(gcs_uri: str, local_path: str):
     assert gcs_uri.startswith("gs://")
 
     bucket_name, blob_path = gcs_uri[5:].split("/", 1)
-
+    
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_path)

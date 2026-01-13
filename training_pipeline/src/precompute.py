@@ -9,7 +9,7 @@ import json
 import os 
 
 mlflow_url = os.environ.get("mlflow_url")  
-qdrant_url = os.environ.get("qdrant_url")        #"qdrant.serving.svc.cluster.local:6333"
+qdrant_url = os.environ.get("qdrant_url")        
 collection_name = "item2vec"
 top_K = 100
 redis_key_prefix = "output:i2i:"

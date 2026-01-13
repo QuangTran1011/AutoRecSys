@@ -2,6 +2,7 @@ from loguru import logger
 from api.utils import safe_float, safe_str, parse_feature, get_item_metadata
 import httpx
 
+
 async def get_item_feature(item_id: str, FEAST_ONLINE_SERVER_HOST, FEAST_ONLINE_SERVER_PORT):
     url = f"http://{FEAST_ONLINE_SERVER_HOST}:{FEAST_ONLINE_SERVER_PORT}/get-online-features"
     payload = {

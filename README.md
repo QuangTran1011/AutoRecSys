@@ -2,7 +2,7 @@
 An end-to-end, fully automated recommendation system covering the entire pipeline from data processing to cloud-native serving, providing standardized workflows for training, fine-tuning, deployment, and online serving, integrated with modern MLOps tools.
 
 ## System Flow Overview
-![mô tả ảnh](images/full_system.png)  
+![mô tả ảnh](images/fullSys.png)  
 The system consists of three main workflows: the data pipeline, the training pipeline, and the serving pipeline. New data is updated periodically, and whenever new data is available, the pipelines are automatically triggered to ensure the system continuously captures the latest customer behavior.
 
 ### Model:
@@ -46,11 +46,9 @@ The system consists of three main workflows: the data pipeline, the training pip
 ├── feature_pipeline
 │   ├── dbt                                       // dbt to compute feature
 │   ├── feature_store                             
-├── helm_charts_and_material
+├── helm_charts
 │   ├── airflow
 │   ├── ingress-nginx
-│   ├── istio-1.28.1
-│   ├── kubeflow-pipelines
 │   ├── observability
 │   │   ├── alloy
 │   │   ├── grafana
@@ -58,13 +56,16 @@ The system consists of three main workflows: the data pipeline, the training pip
 │   │   ├── mimir-distributed
 │   │   └── tempo
 │   └── qdrant
+├── manifests
+│   ├── istio-1.28.1
+│   └── kubeflow-pipelines
 ├── iac
 │   └── gke
 ├── images
 ├── Jenkinsfile
 ├── ml_tracking_registry                          // experiment tracking and model registry with mlflow
 ├── model_server                                  // bentoml model server
-├── process_interaction_events                    // capture session events with kafka
+├── event_processors                              // capture session events with kafka
 ├── scripts                                       // addition script
 ├── src                                           // source code related model
 ├── ui                                            // gradio ui 

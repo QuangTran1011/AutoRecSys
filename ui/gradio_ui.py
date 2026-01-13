@@ -241,6 +241,8 @@ def sync_likes_and_refresh(user_id, top_k, count):
         # Push tất cả items vào online store
         logger.info(f"Syncing {len(liked_items)} liked items for user {user_id}")
         push_new_item_sequence(user_id=user_id, new_items=liked_items, sequence_length=10)
+        # push vao kafka
+        
         
         # Refresh recommendations
         info, products, df = get_recommendations(user_id, top_k, count)

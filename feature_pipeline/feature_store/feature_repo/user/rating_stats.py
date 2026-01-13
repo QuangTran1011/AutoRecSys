@@ -1,19 +1,22 @@
 from datetime import timedelta
-
 from feast import Entity, FeatureService, FeatureView, Field, PushSource
 from feast import BigQuerySource, ValueType
-
 from feast.types import Float32, Int64, String
-
+import os
 # Define an entity for the user. You can think of an entity as a primary key used to
 # fetch features.
+PROJECT_ID = os.getenv("PROJECT_ID")
+DATASET = os.getenv("BQ_DATASET", "kltn")
+TABLE = os.getenv("USER_TABLE", "user_rating_stats_test")
+
 user = Entity(name="user", join_keys=["user_id"], value_type=ValueType.STRING)
 
 # Define the PostgreSQL source for the new data
 user_rating_stats_source = BigQuerySource(
     name="user_rating_stats_source",
-    query="""
-        SELECT * FROM `turing-thought-481409-d8.kltn.user_rating_stats_test`
+    query=f"""
+        SELECT *
+        FROM `{PROJECT_ID}.{DATASET}.{TABLE}`
     """,
     timestamp_field="timestamp",
 )
